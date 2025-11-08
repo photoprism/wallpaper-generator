@@ -1,0 +1,4 @@
+node_modules
+dist
+src/prototype/wallpaper-generator.html
+compose.yaml

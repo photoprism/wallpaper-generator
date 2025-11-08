@@ -1,0 +1,19 @@
+services:
+  ## see https://hub.docker.com/r/photoprism/codex
+  codex:
+    image: "photoprism/codex:latest"
+    pull_policy: always
+    stop_grace_period: 15s
+    shm_size: "1gb"
+    user: "${UID:-1000}:${GID:-1000}"
+    ## Override variables with optional env file, see https://docs.docker.com/reference/compose-file/services/#required
+    ## Tip: Add "CODEX_PROFILE=chatgpt" to a local .env file to authenticate with your ChatGPT Business account,
+    env_file:
+      - path: ".env"
+        required: false
+    ## Configure development environment
+    environment:
+      HOME: "/home/codex"
+    working_dir: "/workspace"
+    volumes:
+      - ".:/workspace"
