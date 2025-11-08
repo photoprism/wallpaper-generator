@@ -9,7 +9,17 @@ const STYLE_OPTIONS = [
   { value: 'layeredWaves', label: 'Layered Waves' },
   { value: 'gradientMesh', label: 'Gradient Mesh' },
   { value: 'neuralCurves', label: 'Neural Curves' },
+  { value: 'neonHorizon', label: 'Neon Horizon Grid' },
+  { value: 'cyberRain', label: 'Cyber Rain Alley' },
+  { value: 'quantumCity', label: 'Quantum City Pulse' },
+  { value: 'synthwaveMirage', label: 'Synthwave Mirage' },
+  { value: 'hologramPalms', label: 'Hologram Palms' },
   { value: 'spectrumDots', label: 'Spectrum Dots Wave' },
+  { value: 'barnsleyFern', label: 'Barnsley Fern' },
+  { value: 'fractalTree', label: 'Fractal Tree' },
+  { value: 'bokehBloom', label: 'Bokeh Bloom' },
+  { value: 'glassBubbles', label: 'Glass Bubbles' },
+  { value: 'snowflakes', label: 'Snowflakes' },
 ];
 
 const SIZE_PRESETS = [
