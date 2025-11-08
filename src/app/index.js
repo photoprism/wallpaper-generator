@@ -23,21 +23,23 @@ const STYLE_OPTIONS = [
 ];
 
 const SIZE_PRESETS = [
-  { value: '1280x720', label: '1280x720 (HD)', width: 1280, height: 720 },
-  { value: '1920x1080', label: '1920x1080 (Full HD)', width: 1920, height: 1080 },
-  { value: '2560x1440', label: '2560x1440 (QHD)', width: 2560, height: 1440 },
-  { value: '2880x1800', label: '2880x1800 (Mac 15.3")', width: 2880, height: 1800 },
-  { value: '3024x1964', label: '3024x1964 (Mac 14.2")', width: 3024, height: 1964 },
-  { value: '3440x1440', label: '3440x1440 (Ultrawide)', width: 3440, height: 1440 },
-  { value: '3840x2160', label: '3840x2160 (4K)', width: 3840, height: 2160 },
-  { value: '5120x2880', label: '5120x2880 (5K)', width: 5120, height: 2880 },
-  { value: '7680x4320', label: '7680x4320 (8K)', width: 7680, height: 4320 },
+  { value: '1280x720', label: '1280×720 (HD)', width: 1280, height: 720 },
+  { value: '1920x1080', label: '1920×1080 (Full HD)', width: 1920, height: 1080 },
+  { value: '1080x2340', label: '1080×2340 (iPhone mini)', width: 1080, height: 2340 },
+  { value: '1179x2556', label: '1179×2556 (iPhone 15/16)', width: 1179, height: 2556 },
+  { value: '2560x1440', label: '2560×1440 (QHD)', width: 2560, height: 1440 },
+  { value: '2880x1800', label: '2880×1800 (Mac 15.3")', width: 2880, height: 1800 },
+  { value: '3024x1964', label: '3024×1964 (Mac 14.2")', width: 3024, height: 1964 },
+  { value: '3440x1440', label: '3440×1440 (Ultrawide)', width: 3440, height: 1440 },
+  { value: '3840x2160', label: '3840×2160 (4K)', width: 3840, height: 2160 },
+  { value: '5120x2880', label: '5120×2880 (5K)', width: 5120, height: 2880 },
+  { value: '7680x4320', label: '7680×4320 (8K)', width: 7680, height: 4320 },
   { value: 'custom', label: 'Custom...' },
 ];
 
 const FORMAT_OPTIONS = [
-  { value: 'png', label: 'PNG (default)' },
-  { value: 'jpeg', label: 'JPEG (quality 0.9)' },
+  { value: 'png', label: 'PNG' },
+  { value: 'jpeg', label: 'JPEG' },
 ];
 
 const MIN_WIDTH = 320;
@@ -142,7 +144,7 @@ const layoutMarkup = `
             </div>
 
             <p class="hint-text">
-              File names include the selected style, resolution, and palette colors for easy cataloging.
+              File names include the style, resolution, and colors.
             </p>
           </div>
         </section>
