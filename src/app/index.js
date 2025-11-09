@@ -556,12 +556,29 @@ const attachEventHandlers = (state, refs) => {
   });
 
   const syncCustomInputs = () => {
-    state.customSize.width = sanitizeDimension(refs.customWidth.value, state.customSize.width);
-    state.customSize.height = sanitizeDimension(refs.customHeight.value, state.customSize.height);
+    const nextWidth = sanitizeDimension(refs.customWidth.value, state.customSize.width);
+    const nextHeight = sanitizeDimension(refs.customHeight.value, state.customSize.height);
+    const changed = nextWidth !== state.customSize.width || nextHeight !== state.customSize.height;
+
+    state.customSize.width = nextWidth;
+    state.customSize.height = nextHeight;
     refs.customWidth.value = state.customSize.width;
     refs.customHeight.value = state.customSize.height;
-    state.lastRender = null;
-    savePreference('customSize', state.customSize);
+
+    if (state.sizePreset !== 'custom') {
+      state.sizePreset = 'custom';
+      refs.sizeSelect.value = 'custom';
+      savePreference('sizePreset', state.sizePreset);
+      updateCustomVisibility();
+    }
+
+    if (changed) {
+      state.lastRender = null;
+      savePreference('customSize', state.customSize);
+      setStatus(refs.status, 'Custom size updated. Click Generate to render.');
+    } else {
+      savePreference('customSize', state.customSize);
+    }
   };
 
   ['change', 'blur'].forEach((eventName) => {

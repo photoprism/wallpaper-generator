@@ -1,89 +1,249 @@
-import { adjust } from '../../lib/color.js';
-import { clamp } from '../../lib/math.js';
+import * as THREE from 'three';
+
 import { paletteAt } from './helpers.js';
+
+// Build the offscreen Three.js renderer.
+const createRenderer = (canvas) =>
+  new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,
+    preserveDrawingBuffer: true,
+    powerPreference: 'high-performance',
+  });
+
+// Build the spectrum dots scene with animated point sprites.
+const createSpectrumScene = (width, height, colors) => {
+  const palette = colors.length > 1 ? colors.slice(1) : colors;
+  const backgroundColor = new THREE.Color('#000000');
+
+  const scene = new THREE.Scene();
+  scene.background = backgroundColor.clone();
+  scene.fog = new THREE.Fog(backgroundColor.clone().multiplyScalar(0.85), 12, 32);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+  scene.add(ambient);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.25);
+  keyLight.position.set(-6, 6, 8);
+  scene.add(keyLight);
+  const rim = new THREE.PointLight(0xffffff, 0.45);
+  rim.position.set(4, 2.8, -5);
+  scene.add(rim);
+
+  // Particle grid density; raise rows/cols for more dots (GPU cost rises quadratically).
+  const rows = 14 + Math.floor(Math.random() * 7);
+  const cols = 320 + Math.floor(Math.random() * 160);
+  const total = rows * cols;
+
+  const positions = new Float32Array(total * 3);
+  const colorsArray = new Float32Array(total * 3);
+  const sizes = new Float32Array(total);
+  const amplitudes = new Float32Array(total);
+  const frequencies = new Float32Array(total);
+  const phases = new Float32Array(total);
+  const shifts = new Float32Array(total);
+
+  // Dot layout footprint; tweak spanX for horizontal spread and depth for perspective depth.
+  const spanX = 28;
+  const depth = 9;
+  let ptr = 0;
+  for (let row = 0; row < rows; row += 1) {
+    const rowRatio = rows > 1 ? row / (rows - 1) : 0;
+    // BaseY keeps each row's band in frame; widen lerp range to move the wave stack vertically.
+    const baseY =
+      THREE.MathUtils.lerp(-2.8, 2.1, rowRatio) + THREE.MathUtils.randFloatSpread(0.5);
+    const z =
+      THREE.MathUtils.lerp(-depth / 2, depth / 2, rowRatio) +
+      THREE.MathUtils.randFloatSpread(0.6);
+    const rowPhase = Math.random() * Math.PI * 2;
+    const rowShift = Math.random();
+    const rowAmp = THREE.MathUtils.lerp(0.45, 1.25, Math.random()); // Taller oscillations; increase for bigger peaks.
+    const rowFreq = THREE.MathUtils.lerp(0.18, 0.36, Math.random()); // Higher value = tighter waves; lower for slower flow.
+
+    for (let col = 0; col < cols; col += 1) {
+      const colRatio = cols > 1 ? col / (cols - 1) : 0;
+      const x = (colRatio - 0.5) * spanX;
+      const idx = ptr * 3;
+      positions[idx] = x;
+      positions[idx + 1] = baseY;
+      positions[idx + 2] =
+        z + Math.sin(colRatio * Math.PI * 4 + rowPhase) * 0.7 + THREE.MathUtils.randFloatSpread(0.18);
+
+      const paletteT = (colRatio + rowShift) % 1;
+      const color = new THREE.Color(paletteAt(palette, paletteT));
+      colorsArray[idx] = color.r;
+      colorsArray[idx + 1] = color.g;
+      colorsArray[idx + 2] = color.b;
+
+      // Per-dot animation knobs; increase size lerp for larger dots.
+      sizes[ptr] = THREE.MathUtils.lerp(0.1, 0.26, Math.random());
+      amplitudes[ptr] = rowAmp * (0.8 + Math.random() * 0.6);
+      frequencies[ptr] = rowFreq * (0.7 + Math.random() * 0.6);
+      phases[ptr] = rowPhase + Math.random() * Math.PI * 2;
+      shifts[ptr] = rowShift + colRatio * 0.75;
+      ptr += 1;
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute('amp', new THREE.BufferAttribute(amplitudes, 1));
+  geometry.setAttribute('freq', new THREE.BufferAttribute(frequencies, 1));
+  geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+  geometry.setAttribute('shift', new THREE.BufferAttribute(shifts, 1));
+  geometry.computeBoundingSphere();
+
+  const material = new THREE.ShaderMaterial({
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+    },
+    // Vertex shader drives the wave motion; adjust perspective multiplier for point size scaling.
+    vertexShader: `
+      attribute float size;
+      attribute float amp;
+      attribute float freq;
+      attribute float phase;
+      attribute float shift;
+      varying vec3 vColor;
+      varying float vStrength;
+      varying float vShift;
+      uniform float uTime;
+      void main() {
+        vColor = color;
+        vShift = shift;
+        float time = uTime * 0.8;
+        float wave = sin(position.x * freq + time + phase);
+        float ripple = sin((position.z + shift) * (freq * 0.6) + time * 1.4);
+        float band = sin((shift + time * 0.2) * 6.28318);
+        float offset = (wave + ripple * 0.6 + band * 0.4) * amp;
+        vec3 transformed = position;
+        transformed.y += offset;
+        transformed.y += sin((position.x - shift) * freq * 0.4 + time * 1.8) * amp * 0.35;
+        vStrength = abs(offset);
+        vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+        float perspective = 320.0 / max(1.0, -mvPosition.z);
+        gl_PointSize = size * perspective * (1.0 + vStrength * 0.8);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    // Fragment shader controls softness/alpha; tune falloff/twinkle for glow behaviour.
+    fragmentShader: `
+      uniform float uTime;
+      varying vec3 vColor;
+      varying float vStrength;
+      varying float vShift;
+      void main() {
+        vec2 uv = gl_PointCoord * 2.0 - 1.0;
+        float d = dot(uv, uv);
+        if (d > 1.0) discard;
+        float falloff = exp(-d * (1.6 - vStrength * 0.5));
+        float twinkle = 0.7 + 0.3 * sin((vShift + uTime * 0.25) * 6.28318);
+        float alpha = falloff * (0.45 + vStrength * 0.55);
+        vec3 color = vColor * (0.9 + vStrength * 0.6) * twinkle;
+        gl_FragColor = vec4(color, alpha);
+      }
+    `,
+  });
+
+  const points = new THREE.Points(geometry, material);
+  points.position.y = -0.4;
+  points.rotation.x = THREE.MathUtils.degToRad(-18 + Math.random() * 4);
+  points.rotation.z = THREE.MathUtils.degToRad(THREE.MathUtils.randFloatSpread(4));
+  scene.add(points);
+
+  // Camera framing; change radius for distance, yaw spread for angle, camHeight for elevation.
+  const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+  const radius = THREE.MathUtils.lerp(16, 20, Math.random());
+  const yaw = THREE.MathUtils.degToRad(THREE.MathUtils.randFloatSpread(12));
+  const camHeight = THREE.MathUtils.lerp(1.6, 3.8, Math.random());
+  camera.position.set(Math.sin(yaw) * radius, camHeight, Math.cos(yaw) * radius);
+  camera.lookAt(0, -0.6, 0);
+
+  return {
+    scene,
+    camera,
+    objects: [points],
+    resources: [geometry, material],
+    backgroundHex: '#000000',
+  };
+};
+
+// Render the scene and capture the canvas as a data URL.
+const renderToDataUrl = (renderer, scene, camera) => {
+  renderer.setPixelRatio(1);
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png');
+};
 
 export const spectrumDots = {
   name: 'spectrumDots',
   label: 'Spectrum Dots',
-  draw({ ctx, width, height, colors }) {
-    ctx.fillStyle = adjust(colors[0], { l: -0.48 });
-    ctx.fillRect(0, 0, width, height);
+  mode: 'webgl',
+  applyNoise: false,
+  async draw({ canvas, width, height, colors }) {
+    const offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = width;
+    offscreenCanvas.height = height;
 
-    const spectrum = colors.slice(1);
-    const waveCount = Math.floor(Math.random() * 19) + 2;
-    const waves = [];
+    const renderer = createRenderer(offscreenCanvas);
+    renderer.setSize(width, height, false);
+    // Tone mapping + exposure influence perceived vibrancy.
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.04;
+    renderer.physicallyCorrectLights = true;
 
-    for (let index = 0; index < waveCount; index += 1) {
-      const row = (index + Math.random() * 0.5) / Math.max(3, waveCount - 1);
-      const baseY = height * (0.38 + row * 0.35 + (Math.random() - 0.5) * 0.06);
-      waves.push({
-        baseY,
-        amp: height * (0.07 + Math.random() * 0.1),
-        freq: (Math.PI * 2) / (width * (0.85 + Math.random() * 0.5)),
-        phase: Math.random() * Math.PI * 2,
-        turbAmp: height * (0.015 + Math.random() * 0.035),
-        turbFreq: (Math.PI * 2) / (width * (0.25 + Math.random() * 0.45)),
-        colorShift: Math.random(),
-      });
-    }
-
-    const step = clamp(Math.round(width / 420), 5, 12);
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.filter = 'blur(6px)';
-
-    for (const wave of waves) {
-      for (let x = 0; x < width; x += step) {
-        const t = x / Math.max(1, width - 1);
-        const yCore = wave.baseY + Math.sin(x * wave.freq + wave.phase) * wave.amp;
-        const yTurb = Math.sin(x * wave.turbFreq + wave.phase * 0.7) * wave.turbAmp;
-        const y = yCore + yTurb;
-        const crest = Math.abs(Math.cos(x * wave.freq + wave.phase));
-        const radius = 2 + crest * 1.6;
-        ctx.globalAlpha = 0.12 + crest * 0.2;
-        const color = paletteAt(spectrum, (t + wave.colorShift) % 1);
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (const wave of waves) {
-      for (let x = 0; x < width; x += step) {
-        const t = x / Math.max(1, width - 1);
-        const yCore = wave.baseY + Math.sin(x * wave.freq + wave.phase) * wave.amp;
-        const yTurb = Math.sin(x * wave.turbFreq + wave.phase * 0.7) * wave.turbAmp;
-        const y = yCore + yTurb;
-        const crest = Math.abs(Math.cos(x * wave.freq + wave.phase));
-        const radius = 1.4 + crest * 1.3;
-        const color = paletteAt(spectrum, (t + wave.colorShift) % 1);
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = color;
-        ctx.globalAlpha = 0.75;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-
-    const vignette = ctx.createRadialGradient(
-      width / 2,
-      height / 2,
-      0,
-      width / 2,
-      height / 2,
-      Math.max(width, height),
+    const { scene, camera, objects, resources, backgroundHex } = createSpectrumScene(
+      width,
+      height,
+      colors,
     );
-    vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, width, height);
+
+    const backgroundColor = new THREE.Color(backgroundHex);
+    renderer.setClearColor(backgroundColor, 1);
+
+    const pointsMaterial = objects[0]?.material;
+    if (pointsMaterial && pointsMaterial.uniforms?.uTime) {
+      // Increase loop count to bake in more animation frames (higher values add render time).
+      const tempClock = new THREE.Clock();
+      for (let i = 0; i < 48; i += 1) {
+        pointsMaterial.uniforms.uTime.value = tempClock.getElapsedTime() + i * 0.045;
+        renderer.render(scene, camera);
+      }
+    }
+
+    const dataUrl = renderToDataUrl(renderer, scene, camera);
+
+    objects.forEach((object) => scene.remove(object));
+    resources.forEach((resource) => resource.dispose?.());
+    renderer.dispose();
+    if (renderer.forceContextLoss) {
+      renderer.forceContextLoss();
+    }
+
+    await new Promise((resolve) => {
+      const image = new globalThis.Image();
+      image.onload = () => {
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = backgroundHex;
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(image, 0, 0, width, height);
+        }
+        offscreenCanvas.width = 1;
+        offscreenCanvas.height = 1;
+        resolve();
+      };
+      image.src = dataUrl;
+    });
   },
 };
