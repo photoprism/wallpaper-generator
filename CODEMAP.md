@@ -24,4 +24,4 @@
 - `tailwind.config.js` + `postcss.config.cjs`: theme extensions, forms plugin, and PostCSS pipeline.
 - `eslint.config.js`: Flat-config ESLint 9 setup with import, node, promise, and Prettier integration.
 - `prettier.config.cjs` / `.prettierignore`: formatting defaults plus Tailwind class sorting.
-- `Makefile`: wraps npm workflows; `make build` emits `dist/wallpaper-generator.html` (self-contained bundle), plus `dev`, `lint`, `format`, `install`.
+- `Makefile`: wraps npm workflows; `make build` emits `dist/index.html` (self-contained bundle), plus `dev`, `lint`, `format`, `install`.

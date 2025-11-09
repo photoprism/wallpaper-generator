@@ -29,7 +29,7 @@ Learn more: https://agents.md/
 - Install dependencies with `npm install` (or `make install`) before running local commands.
 - Start Vite’s dev server with `npm run dev` (`make dev` mirrors this).
 - Lint and format via `npm run lint` / `npm run format` (`make lint`, `make format` provided).
-- Produce the single-file wallpaper build using `make build`; the target runs `vite build` with `vite-plugin-singlefile` and renames the output to `dist/wallpaper-generator.html`.
+- Produce the single-file wallpaper build using `make build`; the target runs `vite build` with `vite-plugin-singlefile` and renames the output to `dist/index.html`.
 - Do not edit `src/prototype/wallpaper-generator.html`; it remains as the historical reference for styling and behavior.
 - Tailwind tokens live in `src/styles.css`; the neutral PhotoPrism palette (background `#212121`, muted surfaces, system font stack) should stay the source of truth for UI colors and typography.
 

@@ -39,7 +39,7 @@ npm run format   # Prettier + Tailwind class sorting
 make build
 ```
 
-The build step runs `vite build` with `vite-plugin-singlefile` and writes the self-contained output to `dist/wallpaper-generator.html`.
+The build step runs `vite build` with `vite-plugin-singlefile` and writes the self-contained output to `dist/index.html`.
 
 ## Project Structure
 
