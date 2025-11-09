@@ -464,6 +464,61 @@ const renderCanvas = (state, refs) => {
   return renderQueue;
 };
 
+const supportsFilePicker = () =>
+  typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function';
+
+const attemptFilePickerSave = async (blob, filename, mime, format) => {
+  if (!supportsFilePicker()) {
+    return 'unsupported';
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [
+        {
+          description: format === 'jpeg' ? 'JPEG Image' : 'PNG Image',
+          accept: {
+            [mime]: [`.${format}`],
+          },
+        },
+      ],
+    });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return 'saved';
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return 'aborted';
+    }
+    console.error('showSaveFilePicker failed, falling back to default download behaviour.', error);
+    return 'failed';
+  }
+};
+
+const triggerBlobDownload = (blob, filename, statusEl) => {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus(statusEl, `Downloaded ${filename}`);
+};
+
+const triggerDataUrlDownload = (dataUrl, filename, statusEl) => {
+  const anchor = document.createElement('a');
+  anchor.href = dataUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setStatus(statusEl, `Downloaded ${filename}`);
+};
+
 const downloadWallpaper = async (state, refs) => {
   const renderInfo = state.lastRender ?? (await renderCanvas(state, refs));
   if (!renderInfo) {
@@ -477,38 +532,82 @@ const downloadWallpaper = async (state, refs) => {
   const colorSlug = colors.map((hex) => hex.replace('#', '')).join('-');
   const filename = `aiwallpaper_${styleSlug(styleName)}_${width}x${height}_${colorSlug}.${format}`;
 
-  const triggerDownload = (blob) => {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setStatus(refs.status, `Downloaded ${filename}`);
-  };
-
   if (refs.canvas.toBlob) {
-    refs.canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          triggerDownload(blob);
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        refs.canvas.toBlob(
+          (result) => (result ? resolve(result) : reject(new Error('Canvas toBlob returned null'))),
+          mime,
+          quality,
+        );
+      });
+
+      const isIOSDevice = () =>
+        typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      const canShareFile = (file) =>
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+
+      const attemptIOSShare = async (file) => {
+        if (!isIOSDevice()) {
+          return 'unsupported';
         }
-      },
-      mime,
-      quality,
-    );
-  } else {
-    const dataUrl = refs.canvas.toDataURL(mime, quality);
-    const anchor = document.createElement('a');
-    anchor.href = dataUrl;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setStatus(refs.status, `Downloaded ${filename}`);
+        if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') {
+          return 'unsupported';
+        }
+        if (!canShareFile(file)) {
+          return 'unsupported';
+        }
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'PhotoPrism — AI Wallpaper',
+            text: 'Generated with the PhotoPrism AI Wallpaper Generator.',
+          });
+          return 'shared';
+        } catch (error) {
+          if (error?.name === 'AbortError') {
+            return 'aborted';
+          }
+          console.error('navigator.share failed, falling back to download flow.', error);
+          return 'failed';
+        }
+      };
+
+      if (typeof File === 'function') {
+        const fileForShare = new File([blob], filename, { type: mime });
+        const shareResult = await attemptIOSShare(fileForShare);
+        if (shareResult === 'shared') {
+          setStatus(refs.status, `Shared ${filename}`);
+          return;
+        }
+        if (shareResult === 'aborted') {
+          setStatus(refs.status, 'Share canceled.');
+          return;
+        }
+      }
+
+      const pickerResult = await attemptFilePickerSave(blob, filename, mime, format);
+      if (pickerResult === 'saved') {
+        setStatus(refs.status, `Saved ${filename}`);
+        return;
+      }
+      if (pickerResult === 'aborted') {
+        setStatus(refs.status, 'Save canceled.');
+        return;
+      }
+
+      triggerBlobDownload(blob, filename, refs.status);
+      return;
+    } catch (error) {
+      console.error('Failed to export canvas as blob, falling back to data URL.', error);
+    }
   }
+
+  const dataUrl = refs.canvas.toDataURL(mime, quality);
+  triggerDataUrlDownload(dataUrl, filename, refs.status);
 };
 
 const getRefs = (root) => {
