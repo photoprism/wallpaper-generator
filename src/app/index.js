@@ -81,6 +81,25 @@ const MIN_HEIGHT = 240;
 const MAX_DIMENSION = 20000;
 const HEX_PATTERN = /^#?[0-9a-f]{6}$/i;
 
+const isIOSDevice = () => {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent ?? '';
+  const isiOS = /iPad|iPhone|iPod/.test(userAgent);
+
+  if (!isiOS) {
+    return false;
+  }
+
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  return !window.MSStream;
+};
+
 const layoutMarkup = `
   <div class="app-shell">
     <div class="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -262,12 +281,19 @@ const getActiveSize = (state) => {
 
 // Approximate DPR for mobile targets (width < height). Narrower widths imply higher DPR.
 const resolveTargetPixelRatio = (width, height) => {
+  let ratio = 1;
+
   if (height > width) {
-    if (width <= 1280) return 3;
-    if (width <= 1600) return 2.5;
-    return 2;
+    if (width <= 1280) ratio = 3;
+    else if (width <= 1600) ratio = 2.5;
+    else ratio = 2;
   }
-  return 1;
+
+  if (isIOSDevice()) {
+    ratio = Math.min(ratio, 2.5);
+  }
+
+  return ratio;
 };
 
 const setStatus = (statusEl, message) => {
@@ -541,9 +567,6 @@ const downloadWallpaper = async (state, refs) => {
           quality,
         );
       });
-
-      const isIOSDevice = () =>
-        typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       const canShareFile = (file) =>
         typeof navigator !== 'undefined' &&
