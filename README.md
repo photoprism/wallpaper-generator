@@ -1,4 +1,4 @@
-# PhotoPrism — AI Wallpaper Generator
+# PhotoPrism — Wallpaper Generator
 
 Generate PhotoPrism-inspired wallpapers with rich neural gradients, aurora waves, and spectrum dots right in your browser. This Vite + Tailwind app rebuilds the legacy prototype on modern tooling so it is easier to extend, theme, and ship as a single HTML file.
 

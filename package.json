@@ -1,7 +1,7 @@
 {
   "name": "photoprism-wallpaper-generator",
   "version": "0.1.0",
-  "description": "Responsive AI wallpaper generator powered by Vite and Tailwind CSS.",
+  "description": "Responsive wallpaper generator powered by Vite and Tailwind CSS.",
   "type": "module",
   "private": true,
   "directories": {

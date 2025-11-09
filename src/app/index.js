@@ -95,9 +95,9 @@ const layoutMarkup = `
             />
           </div>
           <div>
-            <h1 class="text-3xl font-semibold tracking-tight">AI Wallpaper Generator</h1>
+            <h1 class="text-3xl font-semibold tracking-tight">Wallpaper Generator</h1>
             <p class="text-sm text-subtle">
-              Design neon-tinged wallpapers with PhotoPrism inspired gradients and neural textures.
+              Create smooth, AI-inspired wallpapers with glowing gradients and neural vibes.
             </p>
           </div>
         </div>
