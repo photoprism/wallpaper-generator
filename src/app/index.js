@@ -360,82 +360,97 @@ const applyPalette = (state, refs, palette, renderAfter = false) => {
   }
 };
 
+let renderQueue = Promise.resolve();
+
 // Render the wallpaper onto the main canvas (supports both 2D and WebGL renderers).
 const renderCanvas = (state, refs) => {
-  const rendererDef = RENDERER_INFO[state.style] ?? RENDERER_INFO[DEFAULT_STYLE];
-  const mode = rendererDef?.mode ?? '2d';
-  const applyNoise = rendererDef?.applyNoise ?? true;
-  const styleName = rendererDef?.label ?? getStyleLabel(state.style);
-  setStatus(refs.status, `Rendering ${styleName}...`);
-  state.lastRender = null;
+  const runRender = () =>
+    new Promise((resolve) => {
+      requestAnimationFrame(async () => {
+        const rendererDef = RENDERER_INFO[state.style] ?? RENDERER_INFO[DEFAULT_STYLE];
+        const mode = rendererDef?.mode ?? '2d';
+        const applyNoise = rendererDef?.applyNoise ?? true;
+        const styleName = rendererDef?.label ?? getStyleLabel(state.style);
+        setStatus(refs.status, `Rendering ${styleName}...`);
+        state.lastRender = null;
 
-  return new Promise((resolve) => {
-    requestAnimationFrame(async () => {
-      if (!Array.isArray(state.palette) || state.palette.length === 0) {
-        state.palette = getRandomPalette();
-        renderPaletteControls(state, refs);
-        updateBadge(state, refs);
-      }
-
-      const { width, height } = getActiveSize(state);
-      refs.canvas.width = width;
-      refs.canvas.height = height;
-      const renderer = RENDERERS[state.style];
-      if (!renderer) {
-        throw new Error(`Renderer for style "${state.style}" not found.`);
-      }
-
-      let ctx = null;
-      if (mode !== 'webgl') {
-        ctx = refs.canvas.getContext('2d');
-        if (!ctx) {
-          throw new Error('Canvas 2D context unavailable.');
+        if (!Array.isArray(state.palette) || state.palette.length === 0) {
+          state.palette = getRandomPalette();
+          renderPaletteControls(state, refs);
+          updateBadge(state, refs);
         }
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, 0, width, height);
-      }
 
-      const drawArgs =
-        mode === 'webgl'
-          ? { canvas: refs.canvas, width, height, colors: state.palette }
-          : { ctx, canvas: refs.canvas, width, height, colors: state.palette };
+        const { width, height } = getActiveSize(state);
+        refs.canvas.width = width;
+        refs.canvas.height = height;
+        const renderer = RENDERERS[state.style];
+        if (!renderer) {
+          throw new Error(`Renderer for style "${state.style}" not found.`);
+        }
 
-      const finalize = () => {
-        const targetCtx = mode === 'webgl' ? refs.canvas.getContext('2d') : ctx;
-        if (applyNoise && targetCtx) {
-          if (!state.noisePattern) {
-            state.noisePattern = makeNoisePattern();
+        let ctx = null;
+        if (mode !== 'webgl') {
+          ctx = refs.canvas.getContext('2d');
+          if (!ctx) {
+            throw new Error('Canvas 2D context unavailable.');
           }
-          targetCtx.save();
-          targetCtx.globalAlpha = 1;
-          targetCtx.fillStyle = state.noisePattern;
-          targetCtx.fillRect(0, 0, width, height);
-          targetCtx.restore();
+          ctx.fillStyle = '#111';
+          ctx.fillRect(0, 0, width, height);
         }
 
-        state.lastRender = {
-          styleKey: state.style,
-          styleName,
-          colors: [...state.palette],
-          width,
-          height,
+        const drawArgs =
+          mode === 'webgl'
+            ? { canvas: refs.canvas, width, height, colors: state.palette }
+            : { ctx, canvas: refs.canvas, width, height, colors: state.palette };
+
+        const finalize = () => {
+          const targetCtx = mode === 'webgl' ? refs.canvas.getContext('2d') : ctx;
+          if (applyNoise && targetCtx) {
+            if (!state.noisePattern) {
+              state.noisePattern = makeNoisePattern();
+            }
+            targetCtx.save();
+            targetCtx.globalAlpha = 1;
+            targetCtx.fillStyle = state.noisePattern;
+            targetCtx.fillRect(0, 0, width, height);
+            targetCtx.restore();
+          }
+
+          state.lastRender = {
+            styleKey: state.style,
+            styleName,
+            colors: [...state.palette],
+            width,
+            height,
+          };
+
+          setStatus(refs.status, `Rendered ${styleName} • ${width}x${height}`);
+          updateBadge(state, refs);
+          resolve(state.lastRender);
         };
 
-        setStatus(refs.status, `Rendered ${styleName} • ${width}x${height}`);
-        updateBadge(state, refs);
-        resolve(state.lastRender);
-      };
-
-      try {
-        await renderer(drawArgs);
-        finalize();
-      } catch (error) {
-        console.error(error);
-        setStatus(refs.status, 'Render failed.');
-        resolve(null);
-      }
+        try {
+          await renderer(drawArgs);
+          finalize();
+        } catch (error) {
+          console.error(error);
+          setStatus(refs.status, 'Render failed.');
+          resolve(null);
+        }
+      });
     });
-  });
+
+  const previousQueue = renderQueue;
+  renderQueue = (async () => {
+    try {
+      await previousQueue;
+    } catch {
+      /* ignore prior render errors */
+    }
+    return runRender();
+  })();
+
+  return renderQueue;
 };
 
 const downloadWallpaper = async (state, refs) => {
