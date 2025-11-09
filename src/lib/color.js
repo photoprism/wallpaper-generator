@@ -1,5 +1,6 @@
 import { clamp, lerp } from './math.js';
 
+// Convert a hex string (e.g. "#ffaa00") into an RGB object.
 export function hexToRgb(hex) {
   const normalized = hex.replace('#', '');
   const segments = normalized.match(/.{1,2}/g);
@@ -13,12 +14,14 @@ export function hexToRgb(hex) {
   return { r, g, b };
 }
 
+// Convert RGB channel values (0-255) to a hex string.
 export function rgbToHex(r, g, b) {
   const toHex = (value) => value.toString(16).padStart(2, '0');
 
   return `#${toHex(clamp(r, 0, 255))}${toHex(clamp(g, 0, 255))}${toHex(clamp(b, 0, 255))}`;
 }
 
+// Convert RGB values (0-255) to an HSL representation.
 export function rgbToHsl(r, g, b) {
   let red = r / 255;
   let green = g / 255;
@@ -53,6 +56,7 @@ export function rgbToHsl(r, g, b) {
   return { h: hue, s: saturation, l: lightness };
 }
 
+// Convert HSL values back into RGB channel integers.
 export function hslToRgb(h, s, l) {
   if (s === 0) {
     const value = Math.round(l * 255);
@@ -80,6 +84,7 @@ export function hslToRgb(h, s, l) {
   return { r, g, b };
 }
 
+// Adjust a hex color by tweaking its HSL saturation/lightness.
 export function adjust(hex, { s = 0, l = 0 } = {}) {
   const { r, g, b } = hexToRgb(hex);
   const { h, s: sat, l: light } = rgbToHsl(r, g, b);
@@ -90,6 +95,7 @@ export function adjust(hex, { s = 0, l = 0 } = {}) {
   return rgbToHex(rgb.r, rgb.g, rgb.b);
 }
 
+// Linearly interpolate between two hex colors.
 export function lerpColor(fromHex, toHex, t) {
   const from = hexToRgb(fromHex);
   const to = hexToRgb(toHex);

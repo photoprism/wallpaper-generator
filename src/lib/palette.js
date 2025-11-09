@@ -41,6 +41,7 @@ const BASE_PALETTES = [
   ['#743ce8', '#28357a'],
 ];
 
+// Return a palette of muted colors suitable for neon gradients.
 export const getRandomPalette = () => {
   const base = BASE_PALETTES[Math.floor(Math.random() * BASE_PALETTES.length)];
   return base.map((hex, index) => {

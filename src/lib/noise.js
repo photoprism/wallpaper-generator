@@ -1,3 +1,4 @@
+// Create a repeating canvas pattern with monochrome noise to reduce gradient banding.
 export function makeNoisePattern(alpha = 0.035) {
   const size = 160;
   const canvas = document.createElement('canvas');

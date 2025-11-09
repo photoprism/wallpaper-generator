@@ -1,6 +1,6 @@
 # PhotoPrism — AI Wallpaper Generator Guidelines
 
-**Last Updated:** November 8, 2025
+**Last Updated:** November 9, 2025
 
 ## Purpose
 
@@ -38,6 +38,7 @@ Learn more: https://agents.md/
 - Follow the formatting style in this AGENTS.md file when creating new Markdown documents.
 - Document headings must use Title Case (capitalize words ≥4 letters in AP-style) across Markdown files to keep generated navigation and changelogs consistent.
 - UI components use 12px radius for containers and 8px for interactive elements. Buttons, including `#generate` and `#download`, should share the `.btn` class plus modifiers (e.g., `.btn-primary`) for consistent sizing.
+- JavaScript functions must include concise `//` comments describing their purpose.
 
 ### Additional Rules & Notes
 
