@@ -13,7 +13,7 @@ const createRenderer = (canvas) =>
   });
 
 // Build the spectrum dots scene with animated point sprites.
-const createSpectrumScene = (width, height, colors) => {
+const createSpectrumScene = (width, height, colors, pixelRatio) => {
   const palette = colors.length > 1 ? colors.slice(1) : colors;
   const backgroundColor = new THREE.Color('#000000');
 
@@ -34,6 +34,7 @@ const createSpectrumScene = (width, height, colors) => {
   const rows = 14 + Math.floor(Math.random() * 7);
   const cols = 320 + Math.floor(Math.random() * 160);
   const total = rows * cols;
+  const sizeBoost = 1 + Math.max(0, pixelRatio - 1) * 0.8;
 
   const positions = new Float32Array(total * 3);
   const colorsArray = new Float32Array(total * 3);
@@ -76,7 +77,7 @@ const createSpectrumScene = (width, height, colors) => {
       colorsArray[idx + 2] = color.b;
 
       // Per-dot animation knobs; increase size lerp for larger dots.
-      sizes[ptr] = THREE.MathUtils.lerp(0.1, 0.26, Math.random());
+      sizes[ptr] = THREE.MathUtils.lerp(0.1, 0.26, Math.random()) * sizeBoost;
       amplitudes[ptr] = rowAmp * (0.8 + Math.random() * 0.6);
       frequencies[ptr] = rowFreq * (0.7 + Math.random() * 0.6);
       phases[ptr] = rowPhase + Math.random() * Math.PI * 2;
@@ -102,6 +103,7 @@ const createSpectrumScene = (width, height, colors) => {
     blending: THREE.AdditiveBlending,
     uniforms: {
       uTime: { value: 0 },
+      uPixelRatio: { value: 1 },
     },
     // Vertex shader drives the wave motion; adjust perspective multiplier for point size scaling.
     vertexShader: `
@@ -114,6 +116,7 @@ const createSpectrumScene = (width, height, colors) => {
       varying float vStrength;
       varying float vShift;
       uniform float uTime;
+      uniform float uPixelRatio;
       void main() {
         vColor = color;
         vShift = shift;
@@ -128,7 +131,8 @@ const createSpectrumScene = (width, height, colors) => {
         vStrength = abs(offset);
         vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
         float perspective = 320.0 / max(1.0, -mvPosition.z);
-        gl_PointSize = size * perspective * (1.0 + vStrength * 0.8);
+        float pixelScale = 1.0 + max(0.0, uPixelRatio - 1.0) * 0.85;
+        gl_PointSize = size * perspective * (1.0 + vStrength * 0.8) * pixelScale;
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -176,7 +180,6 @@ const createSpectrumScene = (width, height, colors) => {
 
 // Render the scene and capture the canvas as a data URL.
 const renderToDataUrl = (renderer, scene, camera) => {
-  renderer.setPixelRatio(1);
   renderer.render(scene, camera);
   return renderer.domElement.toDataURL('image/png');
 };
@@ -186,13 +189,14 @@ export const spectrumDots = {
   label: 'Spectrum Dots',
   mode: 'webgl',
   applyNoise: false,
-  async draw({ canvas, width, height, colors }) {
+  async draw({ canvas, width, height, colors, pixelRatio = 1 }) {
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
 
     const renderer = createRenderer(offscreenCanvas);
     renderer.setSize(width, height, false);
+    renderer.setPixelRatio(pixelRatio);
     // Tone mapping + exposure influence perceived vibrancy.
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -203,6 +207,7 @@ export const spectrumDots = {
       width,
       height,
       colors,
+      pixelRatio,
     );
 
     const backgroundColor = new THREE.Color(backgroundHex);
@@ -210,6 +215,9 @@ export const spectrumDots = {
 
     const pointsMaterial = objects[0]?.material;
     if (pointsMaterial && pointsMaterial.uniforms?.uTime) {
+      if (pointsMaterial.uniforms.uPixelRatio) {
+        pointsMaterial.uniforms.uPixelRatio.value = pixelRatio;
+      }
       // Increase loop count to bake in more animation frames (higher values add render time).
       const tempClock = new THREE.Clock();
       for (let i = 0; i < 48; i += 1) {

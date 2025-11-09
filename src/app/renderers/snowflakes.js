@@ -15,7 +15,7 @@ const createRenderer = (canvas) =>
   });
 
 // Build the snowfield; tweak density / spans / focus to change the scene feel.
-const createSnowScene = (width, height, colors) => {
+const createSnowScene = (width, height, colors, pixelRatio) => {
   const baseColor = pickColor(colors);
   const backgroundHex = adjust(baseColor ?? '#111111', { l: -0.55 });
   const backgroundColor = new THREE.Color(backgroundHex);
@@ -49,6 +49,7 @@ const createSnowScene = (width, height, colors) => {
   const spanZ = 26;
 
   const palette = colors.length > 1 ? colors.slice(1) : colors;
+  const sizeBoost = 1 + Math.max(0, pixelRatio - 1) * 0.85;
 
   for (let index = 0; index < flakeCount; index += 1) {
     const idx = index * 3;
@@ -68,7 +69,7 @@ const createSnowScene = (width, height, colors) => {
     colorsArray[idx + 1] = color.g;
     colorsArray[idx + 2] = color.b;
 
-    sizes[index] = randomFloat(0.85, 2.15); // Increase range for chunkier flakes.
+    sizes[index] = randomFloat(0.85, 2.15) * sizeBoost; // Increase range for chunkier flakes.
     drifts[index] = randomFloat(0.4, 1.3); // Larger values = broader sway.
     twinkles[index] = Math.random() * Math.PI * 2;
   }
@@ -90,6 +91,7 @@ const createSnowScene = (width, height, colors) => {
       uTime: { value: 0 },
       uFocusDistance: { value: 13.5 }, // Move focus away/toward camera.
       uFocusRange: { value: 6.5 }, // Tighten for stronger blur falloff.
+      uPixelRatio: { value: 1 },
     },
     // Vertex shader defines drift and depth of field behaviour.
     vertexShader: `
@@ -102,6 +104,7 @@ const createSnowScene = (width, height, colors) => {
       uniform float uTime;
       uniform float uFocusDistance;
       uniform float uFocusRange;
+      uniform float uPixelRatio;
 
       void main() {
         vColor = color;
@@ -121,7 +124,8 @@ const createSnowScene = (width, height, colors) => {
 
         float perspective = 320.0 / viewZ;
         float focusScale = mix(1.65, 0.55, focus);
-        gl_PointSize = size * perspective * focusScale;
+        float pixelScale = 1.0 + max(0.0, uPixelRatio - 1.0) * 0.85;
+        gl_PointSize = size * perspective * focusScale * pixelScale;
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -195,7 +199,6 @@ const createSnowScene = (width, height, colors) => {
 
 // Render to a PNG data URL so we can blit back onto the 2D canvas.
 const renderToDataUrl = (renderer, scene, camera) => {
-  renderer.setPixelRatio(1);
   renderer.render(scene, camera);
   return renderer.domElement.toDataURL('image/png');
 };
@@ -204,13 +207,14 @@ export const snowflakes = {
   name: 'snowflakes',
   label: 'Snowflakes',
   mode: 'webgl',
-  async draw({ canvas, width, height, colors }) {
+  async draw({ canvas, width, height, colors, pixelRatio = 1 }) {
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
 
     const renderer = createRenderer(offscreenCanvas);
     renderer.setSize(width, height, false);
+    renderer.setPixelRatio(pixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
@@ -220,12 +224,16 @@ export const snowflakes = {
       width,
       height,
       colors,
+      pixelRatio,
     );
 
     renderer.setClearColor(new THREE.Color(backgroundHex), 1);
 
     const pointsMaterial = objects[0]?.material;
     if (pointsMaterial && pointsMaterial.uniforms?.uTime) {
+      if (pointsMaterial.uniforms.uPixelRatio) {
+        pointsMaterial.uniforms.uPixelRatio.value = pixelRatio;
+      }
       // Bake multiple frames so the depth-of-field glow feels soft, not speckled.
       const clock = new THREE.Clock();
       for (let frame = 0; frame < 56; frame += 1) {

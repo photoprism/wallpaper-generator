@@ -260,6 +260,16 @@ const getActiveSize = (state) => {
   return { width, height };
 };
 
+// Approximate DPR for mobile targets (width < height). Narrower widths imply higher DPR.
+const resolveTargetPixelRatio = (width, height) => {
+  if (height > width) {
+    if (width <= 1280) return 3;
+    if (width <= 1600) return 2.5;
+    return 2;
+  }
+  return 1;
+};
+
 const setStatus = (statusEl, message) => {
   statusEl.textContent = message;
 };
@@ -383,6 +393,7 @@ const renderCanvas = (state, refs) => {
         const { width, height } = getActiveSize(state);
         refs.canvas.width = width;
         refs.canvas.height = height;
+        const pixelRatio = resolveTargetPixelRatio(width, height);
         const renderer = RENDERERS[state.style];
         if (!renderer) {
           throw new Error(`Renderer for style "${state.style}" not found.`);
@@ -400,8 +411,8 @@ const renderCanvas = (state, refs) => {
 
         const drawArgs =
           mode === 'webgl'
-            ? { canvas: refs.canvas, width, height, colors: state.palette }
-            : { ctx, canvas: refs.canvas, width, height, colors: state.palette };
+            ? { canvas: refs.canvas, width, height, colors: state.palette, pixelRatio }
+            : { ctx, canvas: refs.canvas, width, height, colors: state.palette, pixelRatio };
 
         const finalize = () => {
           const targetCtx = mode === 'webgl' ? refs.canvas.getContext('2d') : ctx;

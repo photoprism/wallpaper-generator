@@ -24,7 +24,7 @@ const createRenderer = (canvas) =>
  *  - baseYOffset/additional sin offsets: vertical placement of the wave.
  *  - shader code (vertex/fragment) for different glow behaviours.
  */
-const createParticleScene = (width, height, colors) => {
+const createParticleScene = (width, height, colors, pixelRatio) => {
   const scene = new THREE.Scene();
 
   // Always keep the background pure black for maximum neon contrast.
@@ -53,6 +53,7 @@ const createParticleScene = (width, height, colors) => {
   const amp = 0.95; // vertical amplitude of the wave
   const wavePhase = Math.random() * Math.PI * 2;
   const secondary = Math.random() * Math.PI * 2;
+  const sizeBoost = 1 + Math.max(0, pixelRatio - 1) * 0.8;
 
   let ptr = 0;
   for (let zi = 0; zi < rows; zi += 1) {
@@ -83,7 +84,9 @@ const createParticleScene = (width, height, colors) => {
       colorsArray[idx + 2] = color.b;
 
       sizes[ptr] =
-        THREE.MathUtils.lerp(0.08, 0.2, Math.random()) * (Math.random() * 0.6 + 0.7);
+        THREE.MathUtils.lerp(0.08, 0.2, Math.random()) *
+        (Math.random() * 0.6 + 0.7) *
+        sizeBoost;
       phases[ptr] = (wave + Math.random()) * 0.5;
       ptr += 1;
     }
@@ -100,6 +103,7 @@ const createParticleScene = (width, height, colors) => {
     blending: THREE.AdditiveBlending,
     uniforms: {
       uTime: { value: 0 },
+      uPixelRatio: { value: 1 },
     },
     vertexShader: `
       attribute float size;
@@ -108,6 +112,7 @@ const createParticleScene = (width, height, colors) => {
       varying vec3 vColor;
       attribute vec3 color;
       uniform float uTime;
+      uniform float uPixelRatio;
       void main() {
         vColor = color;
         vPhase = phase;
@@ -115,7 +120,8 @@ const createParticleScene = (width, height, colors) => {
         transformed.y += sin(phase + uTime) * 0.18;
         vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
         float pointSize = size * (350.0 / -mvPosition.z);
-        gl_PointSize = pointSize;
+        float pixelScale = 1.0 + max(0.0, uPixelRatio - 1.0) * 0.85;
+        gl_PointSize = pointSize * pixelScale;
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -183,7 +189,6 @@ const createParticleScene = (width, height, colors) => {
 };
 
 const renderToDataUrl = (renderer, scene, camera) => {
-  renderer.setPixelRatio(1);
   renderer.render(scene, camera);
   return renderer.domElement.toDataURL('image/png');
 };
@@ -193,16 +198,22 @@ export const particleWaves = {
   label: 'Particle Waves',
   mode: 'webgl',
   applyNoise: false,
-  async draw({ canvas, width, height, colors }) {
+  async draw({ canvas, width, height, colors, pixelRatio = 1 }) {
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
 
     const renderer = createRenderer(offscreenCanvas);
     renderer.setSize(width, height, false);
+    renderer.setPixelRatio(pixelRatio);
     renderer.setClearColor(0x000000, 0);
 
-    const { scene, camera, objects, resources } = createParticleScene(width, height, colors);
+    const { scene, camera, objects, resources } = createParticleScene(
+      width,
+      height,
+      colors,
+      pixelRatio,
+    );
 
     // Camera parameters for tweaking:
     //  - radiusRange: distance from the wave.
@@ -222,6 +233,9 @@ export const particleWaves = {
 
     const particleMaterial = objects[0]?.material;
     if (particleMaterial && particleMaterial.uniforms) {
+      if (particleMaterial.uniforms.uPixelRatio) {
+        particleMaterial.uniforms.uPixelRatio.value = pixelRatio;
+      }
       const tempClock = new THREE.Clock();
       for (let i = 0; i < 48; i += 1) {
         const t = tempClock.getElapsedTime() + i * 0.04;
