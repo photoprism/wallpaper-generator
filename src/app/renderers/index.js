@@ -10,9 +10,9 @@ import { hologramPalms } from './hologramPalms.js'; */
 import { particleWaves } from './particleWaves.js';
 import { spectrumDots } from './spectrumDots.js';
 import { bokehBloom } from './bokehBloom.js';
-import { barnsleyFern } from './barnsleyFern.js';
+/* import { barnsleyFern } from './barnsleyFern.js';
 import { fractalTree } from './fractalTree.js';
-/* import { glassBubbles } from './glassBubbles.js'; */
+import { glassBubbles } from './glassBubbles.js'; */
 import { snowflakes } from './snowflakes.js';
 import { layeredWaves } from './layeredWaves.js';
 
@@ -29,9 +29,9 @@ export const RENDERER_DEFINITIONS = [
   hologramPalms, */
   spectrumDots,
   bokehBloom,
-  barnsleyFern,
+  /* barnsleyFern,
   fractalTree,
-  /* glassBubbles, */
+  glassBubbles, */
   snowflakes,
   layeredWaves,
 ];
