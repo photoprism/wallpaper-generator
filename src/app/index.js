@@ -1,4 +1,4 @@
-import { DEFAULT_STYLE, RENDERER_DEFINITIONS, RENDERERS } from './renderers.js';
+import { DEFAULT_STYLE, RENDERER_DEFINITIONS, RENDERER_INFO, RENDERERS } from './renderers.js';
 import { makeNoisePattern } from '../lib/noise.js';
 import { getRandomPalette } from '../lib/palette.js';
 import { clamp } from '../lib/math.js';
@@ -7,6 +7,49 @@ const STYLE_OPTIONS = RENDERER_DEFINITIONS.map(({ name, label }) => ({
   value: name,
   label,
 }));
+
+const loadPreference = (key, fallback) => {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const stored = window.localStorage.getItem(`photoprism-wallpaper:${key}`);
+    if (!stored) return fallback;
+    return JSON.parse(stored);
+  } catch {
+    return fallback;
+  }
+};
+
+const savePreference = (key, value) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(`photoprism-wallpaper:${key}`, JSON.stringify(value));
+  } catch {
+    /* ignore quota errors */
+  }
+};
+
+const getStyleFromHash = () => {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash.slice(1);
+  return hash && RENDERERS[hash] ? hash : null;
+};
+
+const setStyleHash = (style) => {
+  if (typeof window === 'undefined') return;
+  const { pathname, search } = window.location;
+  const newUrl = style ? `${pathname}${search}#${style}` : `${pathname}${search}`;
+  window.history.replaceState(null, '', newUrl);
+};
+
+const ensureCustomSize = (value) => {
+  if (!value || typeof value !== 'object') {
+    return { width: 2560, height: 1440 };
+  }
+  return {
+    width: clamp(Number(value.width) || 2560, MIN_WIDTH, MAX_DIMENSION),
+    height: clamp(Number(value.height) || 1440, MIN_HEIGHT, MAX_DIMENSION),
+  };
+};
 
 const SIZE_PRESETS = [
   { value: '1280x720', label: '1280×720 (HD)', width: 1280, height: 720 },
@@ -165,9 +208,9 @@ const layoutMarkup = `
 const defaultState = () => ({
   style: DEFAULT_STYLE,
   palette: getRandomPalette(),
-  sizePreset: '2560x1440',
-  format: 'png',
-  customSize: { width: 2560, height: 1440 },
+  sizePreset: loadPreference('sizePreset', '2560x1440'),
+  format: loadPreference('format', 'png'),
+  customSize: ensureCustomSize(loadPreference('customSize', { width: 2560, height: 1440 })),
   noisePattern: null,
   lastRender: null,
 });
@@ -308,17 +351,15 @@ const applyPalette = (state, refs, palette, renderAfter = false) => {
 };
 
 const renderCanvas = (state, refs) => {
-  const ctx = refs.canvas.getContext('2d');
-  if (!ctx) {
-    throw new Error('Canvas 2D context unavailable.');
-  }
-
-  const styleName = getStyleLabel(state.style);
+  const rendererDef = RENDERER_INFO[state.style] ?? RENDERER_INFO[DEFAULT_STYLE];
+  const mode = rendererDef?.mode ?? '2d';
+  const applyNoise = rendererDef?.applyNoise ?? true;
+  const styleName = rendererDef?.label ?? getStyleLabel(state.style);
   setStatus(refs.status, `Rendering ${styleName}...`);
   state.lastRender = null;
 
   return new Promise((resolve) => {
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       if (!Array.isArray(state.palette) || state.palette.length === 0) {
         state.palette = getRandomPalette();
         renderPaletteControls(state, refs);
@@ -328,38 +369,60 @@ const renderCanvas = (state, refs) => {
       const { width, height } = getActiveSize(state);
       refs.canvas.width = width;
       refs.canvas.height = height;
-
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, width, height);
-
       const renderer = RENDERERS[state.style];
       if (!renderer) {
         throw new Error(`Renderer for style "${state.style}" not found.`);
       }
 
-      renderer({ ctx, width, height, colors: state.palette });
-
-      if (!state.noisePattern) {
-        state.noisePattern = makeNoisePattern();
+      let ctx = null;
+      if (mode !== 'webgl') {
+        ctx = refs.canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error('Canvas 2D context unavailable.');
+        }
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, width, height);
       }
 
-      ctx.save();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = state.noisePattern;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
+      const drawArgs =
+        mode === 'webgl'
+          ? { canvas: refs.canvas, width, height, colors: state.palette }
+          : { ctx, canvas: refs.canvas, width, height, colors: state.palette };
 
-      state.lastRender = {
-        styleKey: state.style,
-        styleName,
-        colors: [...state.palette],
-        width,
-        height,
+      const finalize = () => {
+        const targetCtx = mode === 'webgl' ? refs.canvas.getContext('2d') : ctx;
+        if (applyNoise && targetCtx) {
+          if (!state.noisePattern) {
+            state.noisePattern = makeNoisePattern();
+          }
+          targetCtx.save();
+          targetCtx.globalAlpha = 1;
+          targetCtx.fillStyle = state.noisePattern;
+          targetCtx.fillRect(0, 0, width, height);
+          targetCtx.restore();
+        }
+
+        state.lastRender = {
+          styleKey: state.style,
+          styleName,
+          colors: [...state.palette],
+          width,
+          height,
+        };
+
+        setStatus(refs.status, `Rendered ${styleName} • ${width}x${height}`);
+        updateBadge(state, refs);
+        resolve(state.lastRender);
       };
 
-      setStatus(refs.status, `Rendered ${styleName} • ${width}x${height}`);
-      updateBadge(state, refs);
-      resolve(state.lastRender);
+      try {
+        await renderer(drawArgs);
+        finalize();
+      } catch (error) {
+        console.error(error);
+        setStatus(refs.status, 'Render failed.');
+        resolve(null);
+      }
     });
   });
 };
@@ -451,6 +514,7 @@ const attachEventHandlers = (state, refs) => {
   refs.styleSelect.addEventListener('change', ({ target }) => {
     state.style = target.value;
     state.lastRender = null;
+    setStyleHash(state.style);
     updateBadge(state, refs);
     renderCanvas(state, refs);
   });
@@ -466,6 +530,7 @@ const attachEventHandlers = (state, refs) => {
   refs.sizeSelect.addEventListener('change', ({ target }) => {
     state.sizePreset = target.value;
     state.lastRender = null;
+    savePreference('sizePreset', state.sizePreset);
     updateCustomVisibility();
     if (state.sizePreset !== 'custom') {
       const preset = SIZE_PRESETS.find((option) => option.value === state.sizePreset);
@@ -473,6 +538,7 @@ const attachEventHandlers = (state, refs) => {
         state.customSize = { width: preset.width, height: preset.height };
         refs.customWidth.value = preset.width;
         refs.customHeight.value = preset.height;
+        savePreference('customSize', state.customSize);
       }
     }
     setStatus(refs.status, `Size set to ${state.sizePreset}. Click Generate to render.`);
@@ -484,6 +550,7 @@ const attachEventHandlers = (state, refs) => {
     refs.customWidth.value = state.customSize.width;
     refs.customHeight.value = state.customSize.height;
     state.lastRender = null;
+    savePreference('customSize', state.customSize);
   };
 
   ['change', 'blur'].forEach((eventName) => {
@@ -493,6 +560,7 @@ const attachEventHandlers = (state, refs) => {
 
   refs.formatSelect.addEventListener('change', ({ target }) => {
     state.format = target.value;
+    savePreference('format', state.format);
     setStatus(refs.status, `Format set to ${state.format.toUpperCase()}.`);
   });
 
@@ -504,6 +572,7 @@ const attachEventHandlers = (state, refs) => {
     const index = Math.floor(Math.random() * STYLE_OPTIONS.length);
     state.style = STYLE_OPTIONS[index].value;
     refs.styleSelect.value = state.style;
+    setStyleHash(state.style);
     updateBadge(state, refs);
     renderCanvas(state, refs);
   });
@@ -524,10 +593,15 @@ export const initApp = (root) => {
   root.innerHTML = layoutMarkup;
   const refs = getRefs(root);
   const state = defaultState();
+  const hashStyle = getStyleFromHash();
+  if (hashStyle) {
+    state.style = hashStyle;
+  }
 
   renderPaletteControls(state, refs);
   updateBadge(state, refs);
   attachEventHandlers(state, refs);
+  setStyleHash(state.style);
   setStatus(refs.status, 'Ready.');
   renderCanvas(state, refs);
 };

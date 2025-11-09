@@ -14,8 +14,6 @@ logs:
 	docker compose logs --tail=200 -f
 build:
 	npm run build
-	mv dist/index.html dist/wallpaper-generator.html
-	@echo "bundle: dist/wallpaper-generator.html"
 watch:
 	npm run build -- --watch
 dev:

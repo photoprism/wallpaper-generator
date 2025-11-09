@@ -8,6 +8,7 @@ import { cyberRain } from './cyberRain.js';
 import { quantumCity } from './quantumCity.js';
 import { synthwaveMirage } from './synthwaveMirage.js';
 import { hologramPalms } from './hologramPalms.js';
+import { particleWaves } from './particleWaves.js';
 import { spectrumDots } from './spectrumDots.js';
 import { barnsleyFern } from './barnsleyFern.js';
 import { fractalTree } from './fractalTree.js';
@@ -21,6 +22,7 @@ export const RENDERER_DEFINITIONS = [
   layeredWaves,
   gradientMesh,
   neuralCurves,
+  particleWaves,
   neonHorizon,
   cyberRain,
   quantumCity,
@@ -38,5 +40,10 @@ export const DEFAULT_STYLE = softGradient.name;
 
 export const RENDERERS = RENDERER_DEFINITIONS.reduce((acc, renderer) => {
   acc[renderer.name] = renderer.draw;
+  return acc;
+}, {});
+
+export const RENDERER_INFO = RENDERER_DEFINITIONS.reduce((acc, renderer) => {
+  acc[renderer.name] = renderer;
   return acc;
 }, {});

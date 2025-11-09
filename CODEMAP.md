@@ -12,7 +12,7 @@
 - `index.html`: Vite HTML entry with metadata and `/src/main.js` script hook.
 - `src/main.js`: boots the Tailwind UI once the DOM is ready.
 - `src/app/index.js`: orchestrates state, controls, canvas rendering, and download workflow.
-- `src/app/renderers.js`: houses the style-specific canvas algorithms (soft gradient, aurora, waves, mesh, neural curves, neon horizon, cyber rain alley, quantum city, synthwave mirage, hologram palms, spectrum dots, Barnsley fern, fractal tree, bokeh bloom, glass bubbles, snowflakes).
+- `src/app/renderers.js`: houses the style-specific canvas algorithms (soft gradient, aurora, waves, mesh, neural curves, particle waves, neon horizon, cyber rain alley, quantum city, synthwave mirage, hologram palms, spectrum dots, Barnsley fern, fractal tree, bokeh bloom, glass bubbles, snowflakes).
 - `src/lib/`: shared helpers for color math, random palettes, and noise textures. `palette.js` now supports variable-length palettes aligned with homepage gradients.
 - `src/lib/random.js`: utility helpers for random numbers and palette sampling across renderers.
 - `src/styles.css`: Tailwind layers (base/components) defining the neutral PhotoPrism-inspired dark theme (background `#212121`, 12px container radius, 8px element radius, system font stack).

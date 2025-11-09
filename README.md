@@ -4,7 +4,7 @@ Generate PhotoPrism-inspired wallpapers with rich neural gradients, aurora waves
 
 ## Features
 
-- 🎨 Multiple render styles (soft gradient, aurora blurs, layered waves, gradient mesh, neural curves, neon horizon grid, cyber rain alley, quantum city pulse, synthwave mirage, hologram palms, spectrum dots, Barnsley fern, fractal tree, bokeh bloom, glass bubbles, snowflakes).
+- 🎨 Multiple render styles (soft gradient, aurora blurs, layered waves, gradient mesh, neural curves, particle waves, neon horizon grid, cyber rain alley, quantum city pulse, synthwave mirage, hologram palms, spectrum dots, Barnsley fern, fractal tree, bokeh bloom, glass bubbles, snowflakes).
 - 🌈 Dynamic color palettes (shuffle or edit any number of swatches; palettes align with PhotoPrism’s homepage gradients).
 - 🖥️ Resolution presets covering HD through 8K, plus a custom size option with validation.
 - ⬇️ One-click download in PNG or JPEG; filenames capture style, resolution, and colors.
