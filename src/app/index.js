@@ -49,7 +49,7 @@ const HEX_PATTERN = /^#?[0-9a-f]{6}$/i;
 
 const layoutMarkup = `
   <div class="app-shell">
-    <div class="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
       <header class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div class="flex items-center gap-4">
           <div class="logo-chip">
