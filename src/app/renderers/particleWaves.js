@@ -48,8 +48,8 @@ const createParticleScene = (width, height, colors) => {
   const sizes = new Float32Array(total);
   const phases = new Float32Array(total);
 
-  const spanX = 18; // widen for broader horizon coverage
-  const spanZ = 14;
+  const spanX = 24; // widen for broader horizon coverage
+  const spanZ = 16;
   const amp = 0.95; // vertical amplitude of the wave
   const wavePhase = Math.random() * Math.PI * 2;
   const secondary = Math.random() * Math.PI * 2;
