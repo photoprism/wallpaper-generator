@@ -8,6 +8,7 @@ const STYLE_OPTIONS = RENDERER_DEFINITIONS.map(({ name, label }) => ({
   label,
 }));
 
+// Load a saved preference from localStorage (or return the provided fallback).
 const loadPreference = (key, fallback) => {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -19,6 +20,7 @@ const loadPreference = (key, fallback) => {
   }
 };
 
+// Persist a preference to localStorage (silently ignore quota errors).
 const savePreference = (key, value) => {
   if (typeof window === 'undefined') return;
   try {
@@ -28,12 +30,14 @@ const savePreference = (key, value) => {
   }
 };
 
+// Read the current style from the URL hash (if valid).
 const getStyleFromHash = () => {
   if (typeof window === 'undefined') return null;
   const hash = window.location.hash.slice(1);
   return hash && RENDERERS[hash] ? hash : null;
 };
 
+// Persist the selected style in the URL hash for easy sharing/reloads.
 const setStyleHash = (style) => {
   if (typeof window === 'undefined') return;
   const { pathname, search } = window.location;
@@ -41,6 +45,7 @@ const setStyleHash = (style) => {
   window.history.replaceState(null, '', newUrl);
 };
 
+// Ensure custom size objects contain numeric width/height within valid bounds.
 const ensureCustomSize = (value) => {
   if (!value || typeof value !== 'object') {
     return { width: 2560, height: 1440 };
@@ -230,9 +235,11 @@ const styleSlug = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+// Friendly label lookup for the currently selected style.
 const getStyleLabel = (value) =>
   STYLE_OPTIONS.find((option) => option.value === value)?.label ?? value;
 
+// Clamp user-supplied size values to safe numbers.
 const sanitizeDimension = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
@@ -241,6 +248,7 @@ const sanitizeDimension = (value, fallback) => {
   return clamp(parsed, MIN_WIDTH, MAX_DIMENSION);
 };
 
+// Resolve the active dimensions taking the preset/custom settings into account.
 const getActiveSize = (state) => {
   if (state.sizePreset === 'custom') {
     const width = clamp(Math.round(state.customSize.width), MIN_WIDTH, MAX_DIMENSION);
@@ -256,6 +264,7 @@ const setStatus = (statusEl, message) => {
   statusEl.textContent = message;
 };
 
+// Update the header badge with the active style + palette swatches.
 const updateBadge = (state, refs) => {
   refs.badgeStyle.textContent = getStyleLabel(state.style);
   if (!refs.badgeSwatches) {
@@ -338,6 +347,7 @@ const renderPaletteControls = (state, refs) => {
   });
 };
 
+// Replace the palette with new colors and optionally re-render immediately.
 const applyPalette = (state, refs, palette, renderAfter = false) => {
   const nextPalette = palette.length > 0 ? palette : getRandomPalette();
   state.palette = [...nextPalette];
@@ -350,6 +360,7 @@ const applyPalette = (state, refs, palette, renderAfter = false) => {
   }
 };
 
+// Render the wallpaper onto the main canvas (supports both 2D and WebGL renderers).
 const renderCanvas = (state, refs) => {
   const rendererDef = RENDERER_INFO[state.style] ?? RENDERER_INFO[DEFAULT_STYLE];
   const mode = rendererDef?.mode ?? '2d';
