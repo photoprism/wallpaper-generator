@@ -4,7 +4,7 @@ import { paletteAt } from './helpers.js';
 
 export const spectrumDots = {
   name: 'spectrumDots',
-  label: 'Spectrum Waves',
+  label: 'Spectrum Dots',
   draw({ ctx, width, height, colors }) {
     ctx.fillStyle = adjust(colors[0], { l: -0.48 });
     ctx.fillRect(0, 0, width, height);
