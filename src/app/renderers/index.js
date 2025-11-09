@@ -1,39 +1,39 @@
 import { softGradient } from './softGradient.js';
 import { auroraBlurs } from './auroraBlurs.js';
-import { layeredWaves } from './layeredWaves.js';
 import { gradientMesh } from './gradientMesh.js';
 import { neuralCurves } from './neuralCurves.js';
-import { neonHorizon } from './neonHorizon.js';
+/* import { neonHorizon } from './neonHorizon.js';
 import { cyberRain } from './cyberRain.js';
 import { quantumCity } from './quantumCity.js';
 import { synthwaveMirage } from './synthwaveMirage.js';
-import { hologramPalms } from './hologramPalms.js';
+import { hologramPalms } from './hologramPalms.js'; */
 import { particleWaves } from './particleWaves.js';
 import { spectrumDots } from './spectrumDots.js';
+import { bokehBloom } from './bokehBloom.js';
 import { barnsleyFern } from './barnsleyFern.js';
 import { fractalTree } from './fractalTree.js';
-import { bokehBloom } from './bokehBloom.js';
-import { glassBubbles } from './glassBubbles.js';
+/* import { glassBubbles } from './glassBubbles.js'; */
 import { snowflakes } from './snowflakes.js';
+import { layeredWaves } from './layeredWaves.js';
 
 export const RENDERER_DEFINITIONS = [
   softGradient,
   auroraBlurs,
-  layeredWaves,
   gradientMesh,
   neuralCurves,
   particleWaves,
-  neonHorizon,
+  /* neonHorizon,
   cyberRain,
   quantumCity,
   synthwaveMirage,
-  hologramPalms,
+  hologramPalms, */
   spectrumDots,
+  bokehBloom,
   barnsleyFern,
   fractalTree,
-  bokehBloom,
-  glassBubbles,
+  /* glassBubbles, */
   snowflakes,
+  layeredWaves,
 ];
 
 export const DEFAULT_STYLE = softGradient.name;
