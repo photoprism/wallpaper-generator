@@ -44,7 +44,7 @@ const createSpectrumScene = (width, height, colors) => {
   const shifts = new Float32Array(total);
 
   // Dot layout footprint; tweak spanX for horizontal spread and depth for perspective depth.
-  const spanX = 28;
+  const spanX = 36;
   const depth = 9;
   let ptr = 0;
   for (let row = 0; row < rows; row += 1) {
@@ -163,7 +163,7 @@ const createSpectrumScene = (width, height, colors) => {
   const yaw = THREE.MathUtils.degToRad(THREE.MathUtils.randFloatSpread(12));
   const camHeight = THREE.MathUtils.lerp(1.6, 3.8, Math.random());
   camera.position.set(Math.sin(yaw) * radius, camHeight, Math.cos(yaw) * radius);
-  camera.lookAt(0, -0.6, 0);
+  camera.lookAt(0, 1, 0);
 
   return {
     scene,
