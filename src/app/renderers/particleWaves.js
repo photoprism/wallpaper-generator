@@ -211,7 +211,7 @@ export const particleWaves = {
     const radius = THREE.MathUtils.lerp(10.5, 12.5, Math.random());
     const yaw = THREE.MathUtils.degToRad(THREE.MathUtils.randFloatSpread(18)); // +/-9°
     const pitch = THREE.MathUtils.degToRad(THREE.MathUtils.randFloat(0, 6));
-    const camY = THREE.MathUtils.lerp(2.4, 3.0, Math.random());
+    const camY = THREE.MathUtils.lerp(2.4, 8.0, Math.random());
     camera.position.set(
       Math.sin(yaw) * radius,
       camY,
