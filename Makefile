@@ -18,12 +18,9 @@ watch:
 	npm run build -- --watch
 dev:
 	npm run dev
-
 lint:
 	npm run lint
-
 format:
 	npm run format
-
 install:
 	npm install
