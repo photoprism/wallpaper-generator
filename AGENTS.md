@@ -32,6 +32,7 @@ Learn more: https://agents.md/
 - Produce the single-file wallpaper build using `make build`; the target runs `vite build` with `vite-plugin-singlefile` and renames the output to `dist/index.html`.
 - Do not edit `src/prototype/wallpaper-generator.html`; it remains as the historical reference for styling and behavior.
 - Tailwind tokens live in `src/styles.css`; the neutral PhotoPrism palette (background `#212121`, muted surfaces, system font stack) should stay the source of truth for UI colors and typography.
+- Style selection syncs with the URL hash, and size/format preferences persist in `localStorage` for faster testing.
 
 ### Specs & Style Notes
 

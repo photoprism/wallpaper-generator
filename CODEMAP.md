@@ -1,6 +1,6 @@
 # PhotoPrism — AI Wallpaper Generator CODEMAP
 
-**Last Updated:** November 8, 2025
+**Last Updated:** November 9, 2025
 
 ## Purpose
 
@@ -16,6 +16,7 @@
 - `src/lib/`: shared helpers for color math, random palettes, and noise textures. `palette.js` now supports variable-length palettes aligned with homepage gradients.
 - `src/lib/random.js`: utility helpers for random numbers and palette sampling across renderers.
 - `src/styles.css`: Tailwind layers (base/components) defining the neutral PhotoPrism-inspired dark theme (background `#212121`, 12px container radius, 8px element radius, system font stack).
+- URL hash stores the active style; `localStorage` keeps size/format/custom dimensions between sessions.
 
 ## Build And Tooling
 
