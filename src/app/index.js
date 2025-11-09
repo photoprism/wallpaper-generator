@@ -157,7 +157,7 @@ const layoutMarkup = `
                   />
                 </div>
                 <p class="md:col-span-2 hint-text">
-                  Values are clamped between ${MIN_WIDTH}x${MIN_HEIGHT} and ${MAX_DIMENSION}x${MAX_DIMENSION}.
+                  Size can range from ${MIN_WIDTH}×${MIN_HEIGHT} to ${MAX_DIMENSION}×${MAX_DIMENSION}.
                 </p>
               </div>
             </div>
@@ -178,7 +178,7 @@ const layoutMarkup = `
             </div>
 
             <p class="hint-text">
-              File names include the style, resolution, and colors.
+              Download name includes style, resolution, and colors.
             </p>
           </div>
         </section>
