@@ -34,6 +34,7 @@ venv
 .nv
 .eslintcache
 /github
+/temp/
 
 # Files created automatically by editors and/or operating systems:
 .DS_Store

@@ -1,26 +1,12 @@
-import { DEFAULT_STYLE, RENDERERS } from './renderers.js';
+import { DEFAULT_STYLE, RENDERER_DEFINITIONS, RENDERERS } from './renderers.js';
 import { makeNoisePattern } from '../lib/noise.js';
 import { getRandomPalette } from '../lib/palette.js';
 import { clamp } from '../lib/math.js';
 
-const STYLE_OPTIONS = [
-  { value: 'softGradient', label: 'Soft Gradient' },
-  { value: 'auroraBlurs', label: 'Aurora Blurs' },
-  { value: 'layeredWaves', label: 'Layered Waves' },
-  { value: 'gradientMesh', label: 'Gradient Mesh' },
-  { value: 'neuralCurves', label: 'Neural Curves' },
-  { value: 'neonHorizon', label: 'Neon Horizon Grid' },
-  { value: 'cyberRain', label: 'Cyber Rain Alley' },
-  { value: 'quantumCity', label: 'Quantum City Pulse' },
-  { value: 'synthwaveMirage', label: 'Synthwave Mirage' },
-  { value: 'hologramPalms', label: 'Hologram Palms' },
-  { value: 'spectrumDots', label: 'Spectrum Dots Wave' },
-  { value: 'barnsleyFern', label: 'Barnsley Fern' },
-  { value: 'fractalTree', label: 'Fractal Tree' },
-  { value: 'bokehBloom', label: 'Bokeh Bloom' },
-  { value: 'glassBubbles', label: 'Glass Bubbles' },
-  { value: 'snowflakes', label: 'Snowflakes' },
-];
+const STYLE_OPTIONS = RENDERER_DEFINITIONS.map(({ name, label }) => ({
+  value: name,
+  label,
+}));
 
 const SIZE_PRESETS = [
   { value: '1280x720', label: '1280×720 (HD)', width: 1280, height: 720 },
@@ -466,7 +452,7 @@ const attachEventHandlers = (state, refs) => {
     state.style = target.value;
     state.lastRender = null;
     updateBadge(state, refs);
-    setStatus(refs.status, `Style set to ${getStyleLabel(state.style)}. Click Generate to render.`);
+    renderCanvas(state, refs);
   });
 
   const updateCustomVisibility = () => {
