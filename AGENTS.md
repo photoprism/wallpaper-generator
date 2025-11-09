@@ -33,6 +33,9 @@ Learn more: https://agents.md/
 - Do not edit `src/prototype/wallpaper-generator.html`; it remains as the historical reference for styling and behavior.
 - Tailwind tokens live in `src/styles.css`; the neutral PhotoPrism palette (background `#212121`, muted surfaces, system font stack) should stay the source of truth for UI colors and typography.
 - Style selection syncs with the URL hash, and size/format preferences persist in `localStorage` for faster testing.
+- WebGL renderers (e.g., Spectrum Dots, Particle Waves, Snowflakes) now run through Three.js using offscreen canvases; render requests are serialized to avoid race conditions between 2D and WebGL outputs.
+- Mobile portrait renders (width < height) apply a simulated DPR multiplier so particle sizes remain accurate; DPR caps on iOS keep Safari stable during palette shuffles.
+- Downloads prefer the File System Access API when available, fall back to classic anchor downloads elsewhere, and on iOS attempt the Web Share sheet so users can “Save Image” directly to Photos.
 
 ### Specs & Style Notes
 
@@ -40,6 +43,7 @@ Learn more: https://agents.md/
 - Document headings must use Title Case (capitalize words ≥4 letters in AP-style) across Markdown files to keep generated navigation and changelogs consistent.
 - UI components use 12px radius for containers and 8px for interactive elements. Buttons, including `#generate` and `#download`, should share the `.btn` class plus modifiers (e.g., `.btn-primary`) for consistent sizing.
 - JavaScript functions must include concise `//` comments describing their purpose.
+- When adding new Three.js renderers, ensure point sizes honor the incoming `pixelRatio` argument; likewise, clean up WebGL resources (dispose geometries/materials, call `forceContextLoss`) before returning control.
 
 ### Additional Rules & Notes
 
