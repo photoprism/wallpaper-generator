@@ -640,6 +640,36 @@ const attachEventHandlers = (state, refs) => {
     await downloadWallpaper(state, refs);
   });
 
+  const isEditableElement = (element) => {
+    if (!element) {
+      return false;
+    }
+    const tag = element.tagName?.toLowerCase();
+    return (
+      element.isContentEditable ||
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select'
+    );
+  };
+
+  const handleSaveShortcut = async (event) => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key.toLowerCase() === 's'
+    ) {
+      if (event.repeat || isEditableElement(event.target)) {
+        return;
+      }
+      event.preventDefault();
+      await downloadWallpaper(state, refs);
+    }
+  };
+
+  window.addEventListener('keydown', handleSaveShortcut);
+
   updateCustomVisibility();
 };
 
