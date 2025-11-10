@@ -102,16 +102,18 @@ const isIOSDevice = () => {
 
 const layoutMarkup = `
   <div class="app-shell">
-    <div class="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 lg:gap-10 px-4 py-4 lg:py-8 sm:px-6 lg:px-8">
       <header class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div class="flex items-center gap-4">
           <div class="logo-chip">
-            <img
-              src="https://dl.photoprism.app/icons/logo.svg"
-              alt="PhotoPrism"
-              class="h-10 w-10"
-              loading="lazy"
-            />
+            <a href="https://www.photoprism.app/" target="_blank">
+              <img
+                src="https://dl.photoprism.app/icons/bold.svg"
+                alt="PhotoPrism"             
+                class="h-10 w-10 logo-img"            
+                loading="lazy"
+              />
+            </a>
           </div>
           <div>
             <h1 class="text-3xl font-semibold tracking-tight">AI Wallpaper Generator</h1>
@@ -208,7 +210,7 @@ const layoutMarkup = `
             <p class="text-xs text-subtle">
               Tip:
               <span class="font-semibold">Ctrl/⌘ + S</span>
-              after downloading lets you pick any folder.
+              lets you pick any folder.
             </p>
           </div>
           <div class="canvas-shell">
