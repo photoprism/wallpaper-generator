@@ -12,7 +12,7 @@ Generate AI-inspired wallpapers with rich neural gradients, aurora waves, and sp
 - 🧵 WebGL render queue: Three.js-powered styles ([Particle Waves](https://dl.photoprism.app/wallpaper/#particleWaves), [Spectrum Dots](https://dl.photoprism.app/wallpaper/#spectrumDots), [Snowflakes](https://dl.photoprism.app/wallpaper/#snowflakes)) render via offscreen canvases with serialized draw calls to avoid 2D/WebGL conflicts.
 - ♿ Keyboard-friendly controls, accessible labels, and consistent button sizing.
 
-[![Particle Waves](docs/renderers/particle-waves.png)](https://dl.photoprism.app/wallpaper/#particleWaves)
+[![Particle Waves](docs/renderers/particle-waves.jpg)](https://dl.photoprism.app/wallpaper/#particleWaves)
 
 ## Getting Started
 
