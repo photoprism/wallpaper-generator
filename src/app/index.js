@@ -558,7 +558,8 @@ const downloadWallpaper = async (state, refs) => {
   const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
   const quality = format === 'jpeg' ? 0.9 : 1;
   const colorSlug = colors.map((hex) => hex.replace('#', '')).join('-');
-  const filename = `aiwallpaper_${styleSlug(styleName)}_${width}x${height}_${colorSlug}.${format}`;
+  const timestamp = new Date().toISOString().slice(2, 19).replace('T', '-').replace(/[-:]/g, '');
+  const filename = `wallpaper_${styleSlug(styleName)}_${width}x${height}_${colorSlug}_${timestamp}.${format}`;
 
   if (refs.canvas.toBlob) {
     try {
