@@ -1,10 +1,10 @@
-# PhotoPrism — Wallpaper Generator Guidelines
+# PhotoPrism — AI Wallpaper Generator Guidelines
 
 **Last Updated:** November 9, 2025
 
 ## Purpose
 
-This file tells automated coding agents (and humans) where to find the single sources of truth for building, testing, and contributing to the Wallpaper Generator project.
+This file tells automated coding agents (and humans) where to find the single sources of truth for building, testing, and contributing to the [AI Wallpaper Generator](https://github.com/photoprism/wallpaper-generator) project.
 Learn more: https://agents.md/
 
 ## Sources of Truth

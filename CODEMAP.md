@@ -1,4 +1,4 @@
-# PhotoPrism — Wallpaper Generator CODEMAP
+# PhotoPrism — AI Wallpaper Generator CODEMAP
 
 **Last Updated:** November 9, 2025
 
